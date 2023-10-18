@@ -1,0 +1,23 @@
+{{- if .Values.mqttexplorer.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "mqttexplorer.fullname" . }}
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    {{- include "mqttexplorer.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.mqttexplorer.service.type }}
+  ports:
+    {{- if .Values.mqttexplorer.service.ports.ui.enabled }}
+    - name: ui
+      port: {{ .Values.mqttexplorer.service.ports.ui.port }}
+      targetPort: {{ .Values.mqttexplorer.service.ports.ui.targetPort }}
+      protocol: {{ .Values.mqttexplorer.service.ports.ui.protocol }}
+      {{- if and (or (eq .Values.mqttexplorer.service.type "NodePort") (eq .Values.mqttexplorer.service.type "LoadBalancer")) (not (empty .Values.mqttexplorer.service.ports.ui.nodePort)) }}
+      nodePort: {{ .Values.mqttexplorer.service.ports.ui.nodePort }}
+      {{- end }}
+    {{- end }}
+  selector:
+    {{- include "mqttexplorer.selectorLabels" . | nindent 4 }}
+{{- end }}

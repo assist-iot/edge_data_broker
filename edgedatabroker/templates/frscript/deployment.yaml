@@ -1,0 +1,103 @@
+{{- if .Values.frscript.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "frscript.fullname" . }}
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    {{- include "frscript.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.frscript.autoscaling.enabled }}
+  replicas: {{ .Values.frscript.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "frscript.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "frscript.labels" . | nindent 8 }}
+    spec:
+      {{- with .Values.frscript.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.enablerNodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if not .Values.enablerNodeSelector }}
+        {{- with .Values.frscript.nodeSelector }}
+      nodeSelector:
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- end }}
+      {{- with .Values.frscript.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.frscript.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.frscript.podSecurityContext | nindent 8 }}
+      containers:
+        - name: frscript
+          securityContext:
+            {{- toYaml .Values.frscript.securityContext | nindent 12 }}
+          image: "{{ .Values.frscript.image.repository }}:{{ .Values.frscript.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.frscript.image.pullPolicy }}
+          ports:
+            - name: api
+              containerPort: {{ .Values.frscript.service.ports.api.containerPort }}
+              protocol: {{ .Values.frscript.service.ports.api.protocol }}
+            - name: metrics
+              containerPort: {{ .Values.frscript.service.ports.metrics.containerPort }}
+              protocol: {{ .Values.frscript.service.ports.metrics.protocol }}
+          resources:
+            {{- toYaml .Values.frscript.resources | nindent 12 }}
+          {{- with .Values.frscript.envVars }}
+          env:
+            - name: FR_EXPORTER_PORT
+              value: {{ $.Values.frscript.service.ports.metrics.containerPort | quote }}
+            - name: FR_API_PORT
+              value: {{ $.Values.frscript.service.ports.api.containerPort | quote }}
+            - name: FR_SCRIPT_HOST
+              value: {{ include "vernemq.fullname" $ }}.{{ $.Release.Namespace }}.svc.cluster.local
+            - name: FR_SCRIPT_PORT
+              #value: {{ $.Values.vernemq.service.ports.mqtt.containerPort | quote }}
+              value: {{ .VERNEMQ_PORT | quote }}
+            - name: FR_SCRIPT_SSL_ENABLED
+              value: {{ .FR_SCRIPT_SSL_ENABLED | quote }}
+            - name: PYTHONUNBUFFERED
+              value: "1"
+            - name: FR_SCRIPT_CLIENT_ID
+              value: {{ .FR_SCRIPT_CLIENT_ID | quote }}
+            - name: FR_SCRIPT_USERNAME
+              value: {{ .FR_SCRIPT_USERNAME | quote }}
+            - name: FR_SCRIPT_PASSWORD
+              value: {{ .FR_SCRIPT_PASSWORD | quote }}
+          {{- end }}
+
+          volumeMounts:
+            {{- range .Values.frscript.secretMounts }}
+            - name: {{ .name }}
+              mountPath: {{ .path }}
+              readOnly: true
+            {{- end }}
+# here
+            - name: frscript-volume
+              mountPath: /frrules
+      volumes:
+        {{- range .Values.frscript.secretMounts }}
+        - name: {{ .name }}
+          secret:
+            secretName: {{ .secretName }}
+        {{- end }}
+# and here
+        - name: frscript-volume
+          persistentVolumeClaim:
+              claimName: {{ include "frscript.fullname" . }}-volume-claim
+
+{{- end }}

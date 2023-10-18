@@ -1,0 +1,32 @@
+{{- if .Values.frscript.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "frscript.fullname" . }}
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    {{- include "frscript.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.frscript.service.type }}
+  ports:
+    {{- if .Values.frscript.service.ports.api.enabled }}
+    - name: api
+      port: {{ .Values.frscript.service.ports.api.port }}
+      targetPort: {{ .Values.frscript.service.ports.api.targetPort }}
+      protocol: {{ .Values.frscript.service.ports.api.protocol }}
+      {{- if and (or (eq .Values.frscript.service.type "NodePort") (eq .Values.frscript.service.type "LoadBalancer")) (not (empty .Values.frscript.service.ports.api.nodePort)) }}
+      nodePort: {{ .Values.frscript.service.ports.api.nodePort }}
+      {{- end }}
+    {{- end }}
+    {{- if .Values.frscript.service.ports.metrics.enabled }}
+    - name: metrics
+      port: {{ .Values.frscript.service.ports.metrics.port }}
+      targetPort: {{ .Values.frscript.service.ports.metrics.targetPort }}
+      protocol: {{ .Values.frscript.service.ports.metrics.protocol }}
+      {{- if and (or (eq .Values.frscript.service.type "NodePort") (eq .Values.frscript.service.type "LoadBalancer")) (not (empty .Values.frscript.service.ports.metrics.nodePort)) }}
+      nodePort: {{ .Values.frscript.service.ports.metrics.nodePort }}
+      {{- end }}
+    {{- end }}
+  selector:
+    {{- include "frscript.selectorLabels" . | nindent 4 }}
+{{- end }}
