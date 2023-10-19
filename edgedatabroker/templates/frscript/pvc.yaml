@@ -1,0 +1,19 @@
+{{- if .Values.frscript.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+#  name: targetapi-persistent-volume-claim
+  name: {{ include "frscript.fullname" . }}-volume-claim
+  labels:
+#    app: targetapi
+    {{- include "frscript.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 256Mi
+  selector:
+    matchLabels:
+      pv: frscript-persistent-volume
+{{- end }}

@@ -1,0 +1,20 @@
+{{- if .Values.frscript.enabled }}
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+#  name: targetapi-persistent-volume
+  name: {{ include "frscript.fullname" . }}-volume
+  labels:
+#    type: local
+#    app: targetapi
+    {{- include "frscript.labels" . | nindent 4 }}
+spec:
+  volumeMode: Filesystem
+  capacity:
+    storage: 256Mi
+  accessModes:
+    - ReadWriteMany
+  hostPath:
+    path: "/frrules"
+  persistentVolumeReclaimPolicy: Retain
+{{- end }}

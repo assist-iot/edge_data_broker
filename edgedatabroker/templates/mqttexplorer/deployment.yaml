@@ -1,0 +1,97 @@
+{{- if .Values.mqttexplorer.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "mqttexplorer.fullname" . }}
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    {{- include "mqttexplorer.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.mqttexplorer.autoscaling.enabled }}
+  replicas: {{ .Values.mqttexplorer.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "mqttexplorer.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "mqttexplorer.labels" . | nindent 8 }}
+    spec:
+#here
+      volumes:
+#
+        {{- range .Values.mqttexplorer.secretMounts }}
+        - name: {{ .name }}
+          secret:
+            secretName: {{ .secretName }}
+        {{- end }}
+#
+        - name: mqttexplorer-configmap-volume
+          configMap:
+            name: mqttexplorer-configmap
+
+      {{- with .Values.mqttexplorer.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.enablerNodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if not .Values.enablerNodeSelector }}
+        {{- with .Values.mqttexplorer.nodeSelector }}
+      nodeSelector:
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- end }}
+      {{- with .Values.mqttexplorer.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.mqttexplorer.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.mqttexplorer.podSecurityContext | nindent 8 }}
+      containers:
+        - name: mqttexplorer
+          securityContext:
+            {{- toYaml .Values.mqttexplorer.securityContext | nindent 12 }}
+          image: "{{ .Values.mqttexplorer.image.repository }}:{{ .Values.mqttexplorer.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.mqttexplorer.image.pullPolicy }}
+#Here
+          volumeMounts:
+#
+            {{- range .Values.mqttexplorer.secretMounts }}
+            - name: {{ .name }}
+              mountPath: {{ .path }}
+              readOnly: true
+            {{- end }}
+#
+            - mountPath: /etc/config
+              name: mqttexplorer-configmap-volume
+
+          ports:
+            - name: ui
+              containerPort: {{ .Values.mqttexplorer.service.ports.ui.containerPort }}
+              protocol: {{ .Values.mqttexplorer.service.ports.ui.protocol }}
+          resources:
+            {{- toYaml .Values.mqttexplorer.resources | nindent 12 }}
+          {{- with .Values.mqttexplorer.envVars }}
+          env:
+            - name: HTTP_PORT
+              value: {{ $.Values.mqttexplorer.service.ports.ui.containerPort | quote }}
+            - name: CONFIG_PATH
+              value: {{ .CONFIG_PATH | quote }}
+            {{- if .SSL_KEY_PATH }}
+            - name: SSL_KEY_PATH
+              value: {{ .SSL_KEY_PATH | quote }}
+            {{- end }}
+            {{- if .SSL_CERT_PATH }}
+            - name: SSL_CERT_PATH                                
+              value: {{ .SSL_CERT_PATH | quote }}
+            {{- end }}
+          {{- end }}
+{{- end }}

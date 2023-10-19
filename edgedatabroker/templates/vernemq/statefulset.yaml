@@ -1,0 +1,258 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "vernemq.fullname" . }}
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    {{- include "vernemq.labels" . | nindent 4 }}
+spec:
+  serviceName: {{ include "vernemq.fullname" . }}-headless
+  {{- if not .Values.vernemq.autoscaling.enabled }}
+  replicas: {{ .Values.vernemq.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "vernemq.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "vernemq.labels" . | nindent 8 }}
+    spec:
+      {{- with .Values.vernemq.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.enablerNodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if not .Values.enablerNodeSelector }}
+        {{- with .Values.vernemq.nodeSelector }}
+      nodeSelector:
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- end }}
+      {{- with .Values.vernemq.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.vernemq.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.vernemq.podSecurityContext | nindent 8 }}
+      containers:
+        - name: vernemq
+          securityContext:
+            {{- toYaml .Values.vernemq.securityContext | nindent 12 }}
+          image: "{{ .Values.vernemq.image.repository }}:{{ .Values.vernemq.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.vernemq.image.pullPolicy }}
+          ports:
+            - name: mqtt
+              containerPort: {{ .Values.vernemq.service.ports.mqtt.containerPort }}
+              protocol: {{ .Values.vernemq.service.ports.mqtt.protocol }}
+            - name: mqtts
+              containerPort: {{ .Values.vernemq.service.ports.mqtts.containerPort }}
+              protocol: {{ .Values.vernemq.service.ports.mqtts.protocol }}
+            - name: ws
+              containerPort: {{ .Values.vernemq.service.ports.ws.containerPort }}
+              protocol: {{ .Values.vernemq.service.ports.ws.protocol }}
+            - name: wss
+              containerPort: {{ .Values.vernemq.service.ports.wss.containerPort }}
+              protocol: {{ .Values.vernemq.service.ports.wss.protocol }}
+            - name: prometheus
+              containerPort: {{ .Values.vernemq.service.ports.prometheus.containerPort }}
+              protocol: {{ .Values.vernemq.service.ports.prometheus.protocol }}
+          resources:
+            {{- toYaml .Values.vernemq.resources | nindent 12 }}
+          {{- with .Values.vernemq.envVars }}
+          env:
+            {{- if .DOCKER_VERNEMQ_ACCEPT_EULA }}
+            - name: DOCKER_VERNEMQ_ACCEPT_EULA
+              value: {{ .DOCKER_VERNEMQ_ACCEPT_EULA | quote }}
+            {{- end }}
+            {{- if .DOCKER_VERNEMQ_ALLOW_ANONYMOUS }}
+            - name: DOCKER_VERNEMQ_ALLOW_ANONYMOUS
+              value: {{ .DOCKER_VERNEMQ_ALLOW_ANONYMOUS | quote }}
+            {{- end }}
+            {{- if .DOCKER_VERNEMQ_ALLOW_REGISTER_DURING_NETSPLIT }}
+            - name: DOCKER_VERNEMQ_ALLOW_REGISTER_DURING_NETSPLIT
+              value: {{ .DOCKER_VERNEMQ_ALLOW_REGISTER_DURING_NETSPLIT | quote }}
+            {{- end }}
+            {{- if .DOCKER_VERNEMQ_ALLOW_PUBLISH_DURING_NETSPLIT }}
+            - name: DOCKER_VERNEMQ_ALLOW_PUBLISH_DURING_NETSPLIT
+              value: {{ .DOCKER_VERNEMQ_ALLOW_PUBLISH_DURING_NETSPLIT | quote }}
+            {{- end }}
+            {{- if .DOCKER_VERNEMQ_ALLOW_SUBSCRIBE_DURING_NETSPLIT }}
+            - name: DOCKER_VERNEMQ_ALLOW_SUBSCRIBE_DURING_NETSPLIT
+              value: {{ .DOCKER_VERNEMQ_ALLOW_SUBSCRIBE_DURING_NETSPLIT | quote }}
+            {{- end }}
+            {{- if .DOCKER_VERNEMQ_ALLOW_UNSUBSCRIBE_DURING_NETSPLIT }}
+            - name: DOCKER_VERNEMQ_ALLOW_UNSUBSCRIBE_DURING_NETSPLIT
+              value: {{ .DOCKER_VERNEMQ_ALLOW_UNSUBSCRIBE_DURING_NETSPLIT | quote }}
+            {{- end }}
+            {{- if .DOCKER_VERNEMQ_PLUGINS__VMQ_BRIDGE }}
+            - name: DOCKER_VERNEMQ_PLUGINS__VMQ_BRIDGE
+              value: {{ .DOCKER_VERNEMQ_PLUGINS__VMQ_BRIDGE | quote }}
+            {{- end }}
+            {{- if .DOCKER_VERNEMQ_VMQ_BRIDGE__TCP__BR0 }}
+            - name: DOCKER_VERNEMQ_VMQ_BRIDGE__TCP__BR0
+              value: {{ .DOCKER_VERNEMQ_VMQ_BRIDGE__TCP__BR0 | quote }}
+            {{- end }}
+            {{- if .DOCKER_VERNEMQ_VMQ_BRIDGE__TCP__BR0__TOPIC__1 }}
+            - name: DOCKER_VERNEMQ_VMQ_BRIDGE__TCP__BR0__TOPIC__1
+              value: {{ .DOCKER_VERNEMQ_VMQ_BRIDGE__TCP__BR0__TOPIC__1 | quote }}
+            {{- end }}
+            {{- if .DOCKER_VERNEMQ_VMQ_BRIDGE__TCP__BR0__MAX_OUTGOING_BUFFERED_MESSAGES }}
+            - name: DOCKER_VERNEMQ_VMQ_BRIDGE__TCP__BR0__MAX_OUTGOING_BUFFERED_MESSAGES
+              value: {{ .DOCKER_VERNEMQ_VMQ_BRIDGE__TCP__BR0__MAX_OUTGOING_BUFFERED_MESSAGES | quote }}
+            {{- end }}
+            {{- if .DOCKER_VERNEMQ_MAX_CLIENT_ID_SIZE }}
+            - name: DOCKER_VERNEMQ_MAX_CLIENT_ID_SIZE
+              value: {{ .DOCKER_VERNEMQ_MAX_CLIENT_ID_SIZE | quote }}
+            {{- end }}
+            {{- if .DOCKER_VERNEMQ_MAX_ONLINE_MESSAGES }}
+            - name: DOCKER_VERNEMQ_MAX_ONLINE_MESSAGES
+              value: {{ .DOCKER_VERNEMQ_MAX_ONLINE_MESSAGES | quote }}
+            {{- end }}
+            {{- if .DOCKER_VERNEMQ_MAX_OFFLINE_MESSAGES }}
+            - name: DOCKER_VERNEMQ_MAX_OFFLINE_MESSAGES
+              value: {{ .DOCKER_VERNEMQ_MAX_OFFLINE_MESSAGES | quote }}
+            {{- end }}
+            {{- if .DOCKER_VERNEMQ_LISTENER__SSL__CAFILE }}
+            - name: DOCKER_VERNEMQ_LISTENER__SSL__CAFILE
+              value: {{ .DOCKER_VERNEMQ_LISTENER__SSL__CAFILE | quote }}
+            {{- end }}
+            {{- if .DOCKER_VERNEMQ_LISTENER__SSL__CERTFILE }}
+            - name: DOCKER_VERNEMQ_LISTENER__SSL__CERTFILE
+              value: {{ .DOCKER_VERNEMQ_LISTENER__SSL__CERTFILE | quote }}
+            {{- end }}
+            {{- if .DOCKER_VERNEMQ_LISTENER__SSL__KEYFILE }}
+            - name: DOCKER_VERNEMQ_LISTENER__SSL__KEYFILE
+              value: {{ .DOCKER_VERNEMQ_LISTENER__SSL__KEYFILE | quote }}
+            {{- end }}
+            {{- if .DOCKER_VERNEMQ_LISTENER__SSL__DEFAULT }}
+            - name: DOCKER_VERNEMQ_LISTENER__SSL__DEFAULT
+              value: {{ .DOCKER_VERNEMQ_LISTENER__SSL__DEFAULT | quote }}
+            {{- end }}
+            {{- if .DOCKER_VERNEMQ_LISTENER__WS__DEFAULT }}
+            - name: DOCKER_VERNEMQ_LISTENER__WS__DEFAULT
+              value: {{ .DOCKER_VERNEMQ_LISTENER__WS__DEFAULT | quote }}
+            {{- end }}
+
+            {{- if .DOCKER_VERNEMQ_LISTENER__WSS__WSS_DEFAULT }}
+            - name: DOCKER_VERNEMQ_LISTENER__WSS__WSS_DEFAULT
+              value: {{ .DOCKER_VERNEMQ_LISTENER__WSS__WSS_DEFAULT | quote }}
+            {{- end }}
+            {{- if .DOCKER_VERNEMQ_LISTENER__WSS__WSS_DEFAULT__CAFILE }}
+            - name: DOCKER_VERNEMQ_LISTENER__WSS__WSS_DEFAULT__CAFILE
+              value: {{ .DOCKER_VERNEMQ_LISTENER__WSS__WSS_DEFAULT__CAFILE | quote }}
+            {{- end }}
+            {{- if .DOCKER_VERNEMQ_LISTENER__WSS__WSS_DEFAULT__CERTFILE }}
+            - name: DOCKER_VERNEMQ_LISTENER__WSS__WSS_DEFAULT__CERTFILE
+              value: {{ .DOCKER_VERNEMQ_LISTENER__WSS__WSS_DEFAULT__CERTFILE | quote }}
+            {{- end }}
+            {{- if .DOCKER_VERNEMQ_LISTENER__WSS__WSS_DEFAULT__KEYFILE }}
+            - name: DOCKER_VERNEMQ_LISTENER__WSS__WSS_DEFAULT__KEYFILE
+              value: {{ .DOCKER_VERNEMQ_LISTENER__WSS__WSS_DEFAULT__KEYFILE | quote }}
+            {{- end }}
+
+## DATABASE AUTH CONF
+            {{- if .DOCKER_VERNEMQ_PLUGINS__VMQ_DIVERSITY }}
+            - name: DOCKER_VERNEMQ_PLUGINS__VMQ_DIVERSITY
+              value: {{ .DOCKER_VERNEMQ_PLUGINS__VMQ_DIVERSITY | quote }}
+            {{- end }}
+            {{- if .DOCKER_VERNEMQ_PLUGINS__VMQ_PASSWD }}
+            - name: DOCKER_VERNEMQ_PLUGINS__VMQ_PASSWD
+              value: {{ .DOCKER_VERNEMQ_PLUGINS__VMQ_PASSWD | quote }}
+            {{- end }}
+            {{- if .DOCKER_VERNEMQ_PLUGINS__VMQ_ACL }}
+            - name: DOCKER_VERNEMQ_PLUGINS__VMQ_ACL
+              value: {{ .DOCKER_VERNEMQ_PLUGINS__VMQ_ACL | quote }}
+            {{- end }}
+            {{- if .DOCKER_VERNEMQ_VMQ_DIVERSITY__AUTH_POSTGRES__ENABLED }}
+            - name: DOCKER_VERNEMQ_VMQ_DIVERSITY__AUTH_POSTGRES__ENABLED
+              value: {{ .DOCKER_VERNEMQ_VMQ_DIVERSITY__AUTH_POSTGRES__ENABLED | quote }}
+            {{- end }}
+            {{- if .DOCKER_VERNEMQ_VMQ_DIVERSITY__POSTGRES__HOST }}
+            - name: DOCKER_VERNEMQ_VMQ_DIVERSITY__POSTGRES__HOST
+              value: {{ .DOCKER_VERNEMQ_VMQ_DIVERSITY__POSTGRES__HOST | quote }}
+            {{- end }}
+            {{- if .DOCKER_VERNEMQ_VMQ_DIVERSITY__POSTGRES__PORT }}
+            - name: DOCKER_VERNEMQ_VMQ_DIVERSITY__POSTGRES__PORT
+              value: {{ .DOCKER_VERNEMQ_VMQ_DIVERSITY__POSTGRES__PORT | quote }}
+            {{- end }}
+            {{- if .DOCKER_VERNEMQ_VMQ_DIVERSITY__POSTGRES__USER }}
+            - name: DOCKER_VERNEMQ_VMQ_DIVERSITY__POSTGRES__USER
+              value: {{ .DOCKER_VERNEMQ_VMQ_DIVERSITY__POSTGRES__USER | quote }}
+            {{- end }}
+            {{- if .DOCKER_VERNEMQ_VMQ_DIVERSITY__POSTGRES__PASSWORD }}
+            - name: DOCKER_VERNEMQ_VMQ_DIVERSITY__POSTGRES__PASSWORD
+              value: {{ .DOCKER_VERNEMQ_VMQ_DIVERSITY__POSTGRES__PASSWORD | quote }}
+            {{- end }}
+            {{- if .DOCKER_VERNEMQ_VMQ_DIVERSITY__POSTGRES__DATABASE }}
+            - name: DOCKER_VERNEMQ_VMQ_DIVERSITY__POSTGRES__DATABASE
+              value: {{ .DOCKER_VERNEMQ_VMQ_DIVERSITY__POSTGRES__DATABASE | quote }}
+            {{- end }}
+            {{- if .DOCKER_VERNEMQ_VMQ_DIVERSITY__POSTGRES__PASSWORD_HASH_METHOD }}
+            - name: DOCKER_VERNEMQ_VMQ_DIVERSITY__POSTGRES__PASSWORD_HASH_METHOD
+              value: {{ .DOCKER_VERNEMQ_VMQ_DIVERSITY__POSTGRES__PASSWORD_HASH_METHOD | quote }}
+            {{- end }}
+######################
+          {{- end }}
+          volumeMounts:
+            {{- if .Values.vernemq.persistence.enabled }}
+            - name: data
+              mountPath: /path/in/container
+            {{- end }}
+
+            - name: logs
+              mountPath: /vernemq/log
+            - name: data
+              mountPath: /vernemq/data
+            {{- range .Values.vernemq.secretMounts }}
+            - name: {{ .name }}
+              mountPath: {{ .path }}
+              readOnly: true
+            {{- end }}
+            {{- if .Values.vernemq.certificates }}
+            - name: listener-certificates
+              mountPath: /etc/ssl/vernemq
+            {{- end }}
+
+      volumes:
+
+        - name: logs
+          emptyDir: {}
+        {{- range .Values.vernemq.secretMounts }}
+        - name: {{ .name }}
+          secret:
+            secretName: {{ .secretName }}
+        {{- end }}
+        {{- if .Values.vernemq.certificates }}
+        - name: listener-certificates
+          secret:
+            secretName: {{ include "vernemq.fullname" . }}-certs
+        {{- end }}
+
+  {{- if and .Values.vernemq.persistence.enabled .Values.vernemq.persistence.existingClaim }}
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ tpl .Values.vernemq.persistence.existingClaim $ }}
+  {{- else if not .Values.vernemq.persistence.enabled }}
+        - name: data
+          emptyDir: {}
+  {{- else }}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+        {{- range .Values.vernemq.persistence.accessModes }}
+          - {{ . | quote }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.vernemq.persistence.size | quote }}
+  {{- end }}
