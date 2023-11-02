@@ -36,7 +36,7 @@ Use `gitlab.assist-iot.eu:5050/enablers-registry/public/edb/vernemq-arm` and `gi
 
 **Note**: Disable mqttexplorer when deploying EDBE in ARM architectures.
 
-Use `vernemq/vernemq` (official vernemq image) and `gitlab.assist-iot.eu:5050/enablers-registry/public/edb/frscript-ubuntu` images for deploying EDBE in Ubuntu x64 architectures. 
+Use `erlio/docker-vernemq` (official vernemq image) and `gitlab.assist-iot.eu:5050/enablers-registry/public/edb/frscript-ubuntu` images for deploying EDBE in Ubuntu x64 architectures. 
 
 **Note**: Add `DOCKER_VERNEMQ_ACCEPT_EULA: "yes"` as an environmental variable when using the official vernemq image.
 
