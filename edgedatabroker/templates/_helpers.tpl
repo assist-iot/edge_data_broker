@@ -86,6 +86,17 @@ tier: {{ .Values.vernemq.tier }}
 {{- end }}
 
 {{/*
+Create the name of the service account to use
+*/}}
+{{- define "vernemq.serviceAccountName" -}}
+{{- if .Values.vernemq.rbac.serviceAccount.create -}}
+    {{ default (include "vernemq.fullname" .) .Values.vernemq.rbac.serviceAccount.name }}
+{{- else -}}
+    {{ default "default" .Values.vernemq.rbac.serviceAccount.name }}
+{{- end -}}
+{{- end -}}
+
+{{/*
 Name of the component frscript.
 */}}
 {{- define "frscript.name" -}}
