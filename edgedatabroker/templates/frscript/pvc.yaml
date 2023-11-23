@@ -1,4 +1,4 @@
-{{- if .Values.frscript.enabled }}
+{{- if and (.Values.frscript.enabled) (.Values.frscript.persistence.enabled)}}
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:

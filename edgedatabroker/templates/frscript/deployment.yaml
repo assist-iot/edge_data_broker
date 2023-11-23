@@ -87,8 +87,10 @@ spec:
               readOnly: true
             {{- end }}
 # here
+            {{- if .Values.frscript.persistence.enabled}}
             - name: frscript-volume
               mountPath: /frrules
+            {{- end }}
       volumes:
         {{- range .Values.frscript.secretMounts }}
         - name: {{ .name }}
@@ -96,8 +98,10 @@ spec:
             secretName: {{ .secretName }}
         {{- end }}
 # and here
+        {{- if .Values.frscript.persistence.enabled}}
         - name: frscript-volume
           persistentVolumeClaim:
               claimName: {{ include "frscript.fullname" . }}-volume-claim
+        {{- end }}
 
 {{- end }}
