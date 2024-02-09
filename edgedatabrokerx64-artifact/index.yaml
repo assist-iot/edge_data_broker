@@ -1,0 +1,14 @@
+apiVersion: v1
+entries:
+  edgedatabrokerx64:
+  - apiVersion: v2
+    appVersion: 1.0.0
+    created: "2024-02-08T16:40:14.9452125+02:00"
+    description: A Helm chart for Edge Data Broker enabler for x64 architectures
+    digest: c4a36d75d625f525ddb29850dc8944d0ed64d1c6ea6d5d505cc687ddb11cbd77
+    name: edgedatabrokerx64
+    type: application
+    urls:
+    - edgedatabrokerx64-1.0.0.tgz
+    version: 1.0.0
+generated: "2024-02-08T16:40:14.9443312+02:00"
